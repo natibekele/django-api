@@ -1,3 +1,7 @@
 .DS_Store
 ./app/core/__pychace__
 ./app/app/__pychace__
+__pychace__/
+*.py[cod]
+*__pychace__/
+-__pycache__
