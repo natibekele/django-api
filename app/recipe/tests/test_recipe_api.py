@@ -9,14 +9,13 @@ from core.models import Recipe,Tag, Ingredient
 
 from recipe.serializers import RecipeSerializer, RecipeDetailSerializer
 
+# /api/recipe/recipes
 RECIPES_URL = reverse('recipe:recipe-list')
 
+# /api/reciep/recipies/1/
 def detail_url(recipe_id):
     """Return recipe detail url"""
     return reverse('recipe:recipe-detail', args=[recipe_id])
-
-# /api/recipe/recipes
-# /api/reciep/recipies/1/
 
 def sample_recipe(user,**params):
     """Create and return a sample recipe"""
@@ -161,3 +160,48 @@ class PrivateRecipeApiTests(TestCase):
         self.assertEqual(ingredients.count(), 2)
         self.assertIn(ingredient1, ingredients)
         self.assertIn(ingredient2, ingredients)
+
+
+    def test_partial_update_recipe(self):
+        """Test updating a recipe with patch"""
+        recipe= sample_recipe(user=self.user)
+        recipe.tags.add(sample_tag(user=self.user))
+        new_tag = sample_tag(user=self.user, name = 'Curry')
+
+        payload = {
+            'title': 'new title',
+            'tags': [new_tag.id]
+        }
+        url = detail_url(recipe.id)
+        self.client.patch(url,payload)
+
+        recipe.refresh_from_db()
+        self.assertEqual(recipe.title, payload['title'])
+        tags = recipe.tags.all()
+        self.assertEqual(len(tags), 1)
+        self.assertIn(new_tag, tags)
+
+    
+    def test_full_update_recipe(self):
+        """Test updating the recipe with an update"""
+        recipe = sample_recipe(user=self.user)
+        recipe.tags.add(sample_tag(user=self.user))
+        recipe.ingredients.add(sample_ingredient(user=self.user))
+
+        payload = {
+            'title' : 'Spicy Bachata',
+            'time_minutes': 50,
+            'price': 25
+        }
+        url = detail_url(recipe.id)
+        self.client.put(url, payload)
+
+        recipe.refresh_from_db()
+        self.assertEqual(recipe.title, payload['title'])
+        tags = recipe.tags.all()
+        ingredients = recipe.ingredients.all()
+        self.assertEqual(recipe.time_minutes, payload['time_minutes'])
+        self.assertEqual(recipe.price, payload['price'])
+        self.assertEqual(len(tags), 0)
+        self.assertEqual(len(ingredients),0)
+        
